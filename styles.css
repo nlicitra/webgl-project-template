@@ -1,0 +1,19 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+  background-color: darkgray;
+}
+
+#root > canvas {
+  margin: auto;
+  border: 1px solid black;
+  box-sizing: border-box;
+  background-color: gray;
+}
