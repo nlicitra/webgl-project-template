@@ -77,10 +77,10 @@ const fSource = glsl`
 
 export const init = () => {
   let thresholds = {
-    red: 0.1,
-    green: 0.1,
-    blue: 0.1,
-    alpha: 0.1
+    red: 0.0,
+    green: 0.0,
+    blue: 0.0,
+    alpha: 0.0
   };
   let videoSelection = "sea";
   const canvas = document.getElementById("canvas");

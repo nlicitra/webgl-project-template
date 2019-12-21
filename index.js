@@ -13,7 +13,7 @@ window.setVideoSelection = name => {
 
 setVideoSelection("sea");
 
-window.setThreshold("red", 0.1);
-window.setThreshold("green", 0.1);
-window.setThreshold("blue", 0.1);
+window.setThreshold("red", 0.0);
+window.setThreshold("green", 0.0);
+window.setThreshold("blue", 0.0);
 // window.setThreshold("alpha", 0.1);
