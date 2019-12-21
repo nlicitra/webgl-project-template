@@ -21,10 +21,8 @@ const rectCoords = (x, y, width, height) => {
 const createVideo = url => {
   const video = document.createElement("video");
   video.src = url;
-  video.autoplay = true;
   video.loop = true;
   video.muted = true;
-  video.play();
   return video;
 };
 
@@ -47,34 +45,33 @@ const fSource = glsl`
     precision mediump float;
     uniform sampler2D u_texture;
     varying vec2 v_texCoord;
-    uniform float u_rThreshold;
-    uniform float u_gThreshold;
-    uniform float u_bThreshold;
+    uniform vec4 u_threshold;
     uniform float u_time;
 
     float calcPixelValue(float color, float threshold);
     float calcPixelValue(float color, float threshold) {
-      float magnitude = (threshold - color) / threshold;
-      return smoothstep(0.0, 1.0, color * pow(magnitude, threshold));
+      if (color < threshold) {
+        // float magnitude = (color - threshold);
+        return 1.0 - color;
+      }
+      return color;
     }
  
     void main() {
       vec4 color = texture2D(u_texture, v_texCoord);
-      float r = color.r;
-      float g = color.g;
-      float b = color.b;
-      float a = color.a;
-      float weight = 0.4;
-      if (r < u_rThreshold) {
-        r = calcPixelValue(r, u_rThreshold);
+      // float r = calcPixelValue(color.r, u_threshold.r);
+      // float g = calcPixelValue(color.g, u_threshold.g);
+      // float b = calcPixelValue(color.b, u_threshold.b);
+      // float a = calcPixelValue(color.a, u_threshold.a);
+      // gl_FragColor = vec4(r, g, b, a);
+      vec3 diff = u_threshold.rgb - color.rgb;
+      if (diff.r > 0.0 || diff.g > 0.0 || diff.b > 0.0) {
+        // vec3 c = color.rgb + (color.rgb * diff);
+        vec3 c = vec3(1.0, 1.0, 1.0) - color.rgb;
+        gl_FragColor = vec4(c.r, c.g, c.b, color.a);
+      } else {
+        gl_FragColor = color;
       }
-      if (g < u_gThreshold) {
-        g = calcPixelValue(g, u_gThreshold);
-      }
-      if (b < u_bThreshold) {
-        b = calcPixelValue(b, u_bThreshold);
-      }
-      gl_FragColor = vec4(r, g, b, a);
     }
   `;
 
@@ -82,14 +79,23 @@ export const init = () => {
   let thresholds = {
     red: 0.1,
     green: 0.1,
-    blue: 0.1
+    blue: 0.1,
+    alpha: 0.1
   };
+  let videoSelection = "sea";
   const canvas = document.getElementById("canvas");
   const app = new AppContext(canvas);
   app.vertexShader(vSource);
   app.fragmentShader(fSource);
   app.compile();
-  const video = createVideo("./images/sea.mp4");
+  const videos = {
+    sea: createVideo("./video/sea.mp4"),
+    winter: createVideo("./video/winter.mp4"),
+    cascade: createVideo("./video/cascade.mp4"),
+    river: createVideo("./video/river.mp4"),
+    rose: createVideo("./video/rose.mp4"),
+    waterfall: createVideo("./video/waterfall.mp4")
+  };
   const rect = rectCoords(0, 0, 1920, 1080);
   /* prettier-ignore */
   const texCoords = [
@@ -100,21 +106,35 @@ export const init = () => {
     1.0, 0.0,
     1.0, 1.0,
   ]
-  video.oncanplaythrough = () => {
+  videos[videoSelection].oncanplaythrough = () => {
     app.render(gl => {
       app.gl.clearColor(0, 0, 0, 0);
       app.gl.clear(app.gl.COLOR_BUFFER_BIT);
-      app.uniform("u_rThreshold").write(thresholds.red);
-      app.uniform("u_gThreshold").write(thresholds.green);
-      app.uniform("u_bThreshold").write(thresholds.blue);
+      app
+        .uniform("u_threshold")
+        .write(
+          thresholds.red,
+          thresholds.green,
+          thresholds.blue,
+          thresholds.alpha
+        );
       app.attribute("a_position").write(rect, { vertexAttrib: true });
       app.attribute("a_texCoord").write(texCoords, { vertexAttrib: true });
-      app.texture("video").write(video);
+      app.texture(videoSelection).write(videos[videoSelection]);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     });
   };
 
-  return (color, val) => {
-    thresholds[color] = val;
+  return {
+    setVideoSelection: name => {
+      if (!videos[videoSelection].paused) {
+        videos[videoSelection].pause();
+      }
+      videoSelection = name;
+      videos[videoSelection].play();
+    },
+    setThreshold: (color, val) => {
+      thresholds[color] = val;
+    }
   };
 };
