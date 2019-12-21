@@ -1,4 +1,9 @@
 import { init } from "./js/bootstrap.js";
 
-const context = init();
-console.log(context);
+const setThreshold = init();
+
+function updateThreshold(val) {
+  setThreshold(val);
+}
+
+window.updateThreshold = updateThreshold;

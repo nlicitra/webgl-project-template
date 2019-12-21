@@ -5,15 +5,27 @@ body {
 
 #root {
   display: flex;
-  height: 100vh;
+  flex-direction: column;
   justify-content: center;
-  align-items: center;
   background-color: darkgray;
+  position: relative;
 }
 
-#root > canvas {
-  margin: auto;
-  border: 1px solid black;
-  box-sizing: border-box;
+#canvas {
   background-color: gray;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+}
+
+.controls {
+  background-color: rgba(0.1, 0.1, 0.1, 0.1);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+  display: inline-block;
+}
+
+.controls input {
+  width: 400px;
+  size: 60;
 }

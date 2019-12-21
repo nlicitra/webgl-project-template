@@ -1,93 +1,185 @@
 import { random, range } from "./math.js";
+import AppContext from "./context.js";
 
-const createCanvas = (height = 1000, width = 1000) => {
+const createCanvas = () => {
   const root = document.getElementById("root");
   const canvas = document.createElement("canvas");
-  canvas.height = height;
-  canvas.width = width;
   root.appendChild(canvas);
   return canvas;
 };
 
-const createShader = (gl, type, source) => {
-  const shader = gl.createShader(type);
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-  if (success) {
-    return shader;
-  }
-  console.error(gl.getShaderInfoLog(shader));
-  gl.deleteShader(shader);
+const rectCoords = (x, y, width, height) => {
+  const x1 = x;
+  const x2 = x + width;
+  const y1 = y;
+  const y2 = y + height;
+  /* prettier-ignore */
+  return [
+    x1, y1,
+    x2, y1,
+    x1, y2,
+    x1, y2,
+    x2, y1,
+    x2, y2,
+  ]
 };
 
-const createProgram = (gl, vertexShader, fragmentShader) => {
-  const program = gl.createProgram();
-  gl.attachShader(program, vertexShader);
-  gl.attachShader(program, fragmentShader);
-  gl.linkProgram(program);
-  const success = gl.getProgramParameter(program, gl.LINK_STATUS);
-  if (success) {
-    return program;
-  }
-
-  console.error(gl.getProgramInfoLog(program));
-  gl.deleteProgram(program);
+const createImage = url => {
+  const image = new Image();
+  image.src = url;
+  // image.width = 400;
+  // image.height = 400;
+  return image;
 };
 
-const initProgram = (gl, vertexSource, fragmentSource) => {
-  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
-  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
-  const program = createProgram(gl, vertexShader, fragmentShader);
-  if (program) {
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.useProgram(program);
-  }
-  return program;
+const createVideo = url => {
+  const video = document.createElement("video");
+  video.src = url;
+  video.autoplay = true;
+  video.loop = true;
+  video.muted = true;
+  // video.width = 1920;
+  // video.height = 1080;
+  video.play();
+  // document.body.appendChild(video);
+  return video;
 };
 
-const initVertexAttrib = (gl, program) => {
-  const positionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-  const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-  gl.enableVertexAttribArray(positionAttributeLocation);
-  gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-};
-
-const render = (gl, uColorLoc) => {
-  const positions = range(6).map(() => random(-1, 1));
-  gl.uniform4f(uColorLoc, random(), random(), random(), 1);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-  gl.drawArrays(gl.TRIANGLES, 0, positions.length / 2);
-};
-
-export const init = ({ width = 1000, height = 1000 } = {}) => {
-  const canvas = createCanvas(height, width);
-  const gl = canvas.getContext("webgl");
-  const vSource = `
+const vSource = `
     // an attribute will receive data from a buffer
-    attribute vec4 a_position;
+    attribute vec2 a_position;
+    uniform vec2 u_resolution;
+    attribute vec2 a_texCoord;
+    varying vec2 v_texCoord;
  
     void main() {
-      gl_Position = a_position;
+      vec2 zeroToOne = a_position / u_resolution;
+      vec2 zeroToTwo = zeroToOne * 2.0;
+      vec2 clipSpace = zeroToTwo - 1.0;
+      gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+      v_texCoord = a_texCoord;
+    }
+  `;
+const fSource = `
+    precision mediump float;
+    uniform sampler2D u_texture;
+    varying vec2 v_texCoord;
+    uniform float u_threshold;
+    uniform float u_time;
+ 
+    void main() {
+      vec4 color = texture2D(u_texture, v_texCoord);
+      float threshold = u_threshold;
+      float r = color.r;
+      float g = color.g;
+      float b = color.b;
+      float a = color.a;
+      float weight = 0.1;
+      if (r < threshold && g < threshold && b < threshold) {
+        // r = (r + (1.0 - r)) * sin(u_time * 0.005);
+        // g = (g + (1.0 - g)) * sin(u_time * 0.003);
+        // b = (b + (1.0 - b)) * cos(u_time * 0.002);
+        // a = 1.0;
+        r = (r + (1.0 - r)) * threshold;
+        g = (g + (1.0 - g)) * threshold;
+        b = (b + (1.0 - b)) * threshold;
+        a = 1.0;
+        vec4 newColor = vec4(r, g, b, a) * color * threshold * sin(u_time * 0.001);
+        gl_FragColor = newColor;
+      } else {
+        gl_FragColor = vec4(r, g, b, a);
+      }
+    }
+  `;
+
+export const init = () => {
+  let threshold = 0.1;
+  const canvas = document.getElementById("canvas");
+  const app = new AppContext(canvas);
+  app.vertexShader(vSource);
+  app.fragmentShader(fSource);
+  app.compile();
+  const video = createVideo("./images/sea.mp4");
+  const rect = rectCoords(0, 0, 1920, 1080);
+  /* prettier-ignore */
+  const texCoords = [
+    0.0, 0.0,
+    1.0, 0.0,
+    0.0, 1.0,
+    0.0, 1.0,
+    1.0, 0.0,
+    1.0, 1.0,
+  ]
+  const startTime = new Date().getTime();
+  video.oncanplaythrough = () => {
+    app.render(gl => {
+      app.gl.clearColor(0, 0, 0, 0);
+      app.gl.clear(app.gl.COLOR_BUFFER_BIT);
+      app.uniform("u_threshold").write(threshold);
+      const elapsed = new Date().getTime() - startTime;
+      app.uniform("u_time").write(elapsed);
+      app.attribute("a_position").write(rect, { vertexAttrib: true });
+      app.attribute("a_texCoord").write(texCoords, { vertexAttrib: true });
+      app.texture("video").write(video);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    });
+  };
+
+  return val => {
+    console.log(val);
+    threshold = val;
+  };
+};
+
+export const init2 = ({ width = 1000, height = 1000 } = {}) => {
+  const vSource = `
+    // an attribute will receive data from a buffer
+    attribute vec2 a_position;
+    uniform vec2 u_resolution;
+    attribute vec2 a_texCoord;
+    varying vec2 v_texCoord;
+ 
+    void main() {
+      vec2 zeroToOne = a_position / u_resolution;
+      vec2 zeroToTwo = zeroToOne * 2.0;
+      vec2 clipSpace = zeroToTwo - 1.0;
+      gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+      v_texCoord = a_texCoord;
     }
   `;
   const fSource = `
     precision mediump float;
-    uniform vec4 u_color;
+    uniform sampler2D u_texture;
+    varying vec2 v_texCoord;
  
     void main() {
-      gl_FragColor = u_color;
+      vec4 color = texture2D(u_texture, v_texCoord);
+      float threshold = 0.9;
+      float r = color.r;
+      float g = color.g;
+      float b = color.b;
+      if (r > threshold) {
+        r = 1.0 - r;
+      }
+      if (g > threshold) {
+        g = 1.0 - g;
+      }
+      if (b > threshold) {
+        b = 1.0 - b;
+      }
+      gl_FragColor = vec4(r, g, b, color.a);
     }
   `;
-  const program = initProgram(gl, vSource, fSource);
-  initVertexAttrib(gl, program);
-  const colorUniformLoc = gl.getUniformLocation(program, "u_color");
-  range(40).forEach(() => {
-    render(gl, colorUniformLoc);
-  });
-
-  return { canvas, gl, program };
+  // const img = createImage("./images/nature.jpeg");
+  const video = createVideo("./images/sea.mp4");
+  video.oncanplaythrough = () => {
+    // const canvas = createCanvas();
+    const gl = canvas.getContext("webgl");
+    resize(gl);
+    const program = initProgram(gl, vSource, fSource);
+    // initVertexAttrib(gl, program);
+    // requestAnimationFrame(() => render(gl, img));
+    initTextureAttrib(gl, program, video);
+    // render(gl, img);
+  };
 };

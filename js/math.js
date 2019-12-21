@@ -9,10 +9,11 @@ const minmax = (a, b) => {
   }
   return [min, max];
 };
-export const random = (a = 1, b) => {
+export const random = (a = 1, b, round = false) => {
   const [min, max] = minmax(a, b);
   const range = max - min;
-  return Math.random() * range + min;
+  const result = Math.random() * range + min;
+  return round ? Math.round(result) : result;
 };
 
 export const range = (a, b) => {
