@@ -78,7 +78,8 @@ class AppContext {
   constructor(canvas) {
     this.attributes = {};
     this.uniforms = {};
-    (this.textures = {}), this.init(canvas);
+    this.textures = {};
+    this.init(canvas);
   }
 
   init(canvas) {
@@ -171,8 +172,11 @@ class AppContext {
   }
 
   render(func) {
+    const startTime = new Date().getTime();
     this._render = () => {
       this.resize();
+      const elapsed = new Date().getTime() - startTime;
+      this.uniform("u_time").write(elapsed);
       func(this.gl);
       requestAnimationFrame(this._render.bind(this));
     };
