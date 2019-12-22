@@ -1,4 +1,4 @@
-import AppContext from "../js/context.js";
+import AppContext from "/js/context.js";
 
 const glsl = x => x;
 

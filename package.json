@@ -5,6 +5,7 @@
   "main": "index.html",
   "scripts": {
     "start": "live-server",
+    "build-example": "cp -r ./js/ ./example/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
