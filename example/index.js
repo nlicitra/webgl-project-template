@@ -1,4 +1,4 @@
-import AppContext from "./context.js";
+import AppContext from "../js/context.js";
 
 const glsl = x => x;
 
@@ -20,7 +20,7 @@ const rectCoords = (x, y, width, height) => {
 
 const createVideo = url => {
   const video = document.createElement("video");
-  video.src = url;
+  // video.src = url;
   video.loop = true;
   video.muted = true;
   return video;
@@ -48,22 +48,8 @@ const fSource = glsl`
     uniform vec4 u_threshold;
     uniform float u_time;
 
-    float calcPixelValue(float color, float threshold);
-    float calcPixelValue(float color, float threshold) {
-      if (color < threshold) {
-        // float magnitude = (color - threshold);
-        return 1.0 - color;
-      }
-      return color;
-    }
- 
     void main() {
       vec4 color = texture2D(u_texture, v_texCoord);
-      // float r = calcPixelValue(color.r, u_threshold.r);
-      // float g = calcPixelValue(color.g, u_threshold.g);
-      // float b = calcPixelValue(color.b, u_threshold.b);
-      // float a = calcPixelValue(color.a, u_threshold.a);
-      // gl_FragColor = vec4(r, g, b, a);
       vec3 diff = u_threshold.rgb - color.rgb;
       if (diff.r > 0.0 || diff.g > 0.0 || diff.b > 0.0) {
         // vec3 c = color.rgb + (color.rgb * diff);
@@ -88,14 +74,15 @@ export const init = () => {
   app.vertexShader(vSource);
   app.fragmentShader(fSource);
   app.compile();
-  const videos = {
-    sea: createVideo("./video/sea.mp4"),
-    winter: createVideo("./video/winter.mp4"),
-    cascade: createVideo("./video/cascade.mp4"),
-    river: createVideo("./video/river.mp4"),
-    rose: createVideo("./video/rose.mp4"),
-    waterfall: createVideo("./video/waterfall.mp4")
+  const videoSources = {
+    sea: "video/sea.mp4",
+    winter: "video/winter.mp4",
+    cascade: "video/cascade.mp4",
+    river: "video/river.mp4",
+    rose: "video/rose.mp4",
+    waterfall: "video/waterfall.mp4"
   };
+  const video = createVideo(videoSources.sea);
   const rect = rectCoords(0, 0, 1920, 1080);
   /* prettier-ignore */
   const texCoords = [
@@ -106,35 +93,44 @@ export const init = () => {
     1.0, 0.0,
     1.0, 1.0,
   ]
-  videos[videoSelection].oncanplaythrough = () => {
-    app.render(gl => {
-      app.gl.clearColor(0, 0, 0, 0);
-      app.gl.clear(app.gl.COLOR_BUFFER_BIT);
-      app
-        .uniform("u_threshold")
-        .write(
-          thresholds.red,
-          thresholds.green,
-          thresholds.blue,
-          thresholds.alpha
-        );
-      app.attribute("a_position").write(rect, { vertexAttrib: true });
-      app.attribute("a_texCoord").write(texCoords, { vertexAttrib: true });
-      app.texture(videoSelection).write(videos[videoSelection]);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-    });
+  app.render(gl => {
+    app.gl.clearColor(0, 0, 0, 0);
+    app.gl.clear(app.gl.COLOR_BUFFER_BIT);
+    app
+      .uniform("u_threshold")
+      .write(
+        thresholds.red,
+        thresholds.green,
+        thresholds.blue,
+        thresholds.alpha
+      );
+    app.attribute("a_position").write(rect, { vertexAttrib: true });
+    app.attribute("a_texCoord").write(texCoords, { vertexAttrib: true });
+    if (video.readyState === 4) {
+      app.texture("video").write(video);
+    } else {
+      app.texture("video").write(new Uint8Array([200, 200, 255, 255]));
+    }
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  });
+
+  window.setThreshold = (color, val) => {
+    thresholds[color] = val;
+    document.getElementById(`${color}-threshold`).innerHTML = val;
   };
 
-  return {
-    setVideoSelection: name => {
-      if (!videos[videoSelection].paused) {
-        videos[videoSelection].pause();
-      }
-      videoSelection = name;
-      videos[videoSelection].play();
-    },
-    setThreshold: (color, val) => {
-      thresholds[color] = val;
-    }
+  window.setVideoSelection = name => {
+    video.pause();
+    videoSelection = name;
+    video.src = videoSources[name];
+    video.load();
+    video.play();
   };
+
+  window.setVideoSelection("sea");
+  window.setThreshold("red", 0.0);
+  window.setThreshold("green", 0.0);
+  window.setThreshold("blue", 0.0);
 };
+
+init();

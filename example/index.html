@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="theme-color" content="#000000" />
+    <link href="styles.css" rel="stylesheet" />
+    <title>WebGL Project</title>
+  </head>
+  <body>
+    <div style="position: relative;">
+      <div class="controls">
+        <div class="color-thresholds">
+          <fieldset for="red-threshold">
+            <label for="red-threshold" style="color: tomato;">RED</label>
+            <input
+              name="red-threshold"
+              type="range"
+              value="0.0"
+              min="0.0"
+              max="1.0"
+              step="0.0001"
+              oninput="setThreshold('red', this.value)"
+            />
+            <span id="red-threshold"></span>
+          </fieldset>
+          <fieldset for="green-threshold">
+            <label for="green-threshold" style="color: mediumseagreen;"
+              >GREEN</label
+            >
+            <input
+              name="green-threshold"
+              type="range"
+              value="0.0"
+              min="0.0"
+              max="1.0"
+              step="0.0001"
+              oninput="setThreshold('green', this.value)"
+            />
+            <span id="green-threshold"></span>
+          </fieldset>
+          <fieldset for="blue-threshold">
+            <label for="blue-threshold" style="color: cornflowerblue"
+              >BLUE</label
+            >
+            <input
+              name="blue-threshold"
+              type="range"
+              value="0.0"
+              min="0.0"
+              max="1.0"
+              step="0.0001"
+              oninput="setThreshold('blue', this.value)"
+            />
+            <span id="blue-threshold"></span>
+          </fieldset>
+        </div>
+        <fieldset for="video">
+          <label for="video">Video</label>
+          <select name="video" onchange="setVideoSelection(event.target.value)">
+            <option>sea</option>
+            <option>winter</option>
+            <option>rose</option>
+            <option>river</option>
+            <option>waterfall</option>
+            <option>cascade</option>
+          </select>
+        </fieldset>
+      </div>
+      <div id="root">
+        <canvas id="canvas" width="1920" height="1080"></canvas>
+      </div>
+    </div>
+
+    <script src="index.js" type="module"></script>
+  </body>
+</html>

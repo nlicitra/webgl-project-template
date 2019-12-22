@@ -47,14 +47,28 @@ class Texture {
 
   write(data, { target = this.gl.TEXTURE_2D } = {}) {
     this.gl.bindTexture(target, this.texture);
-    this.gl.texImage2D(
-      target,
-      0,
-      this.gl.RGBA,
-      this.gl.RGBA,
-      this.gl.UNSIGNED_BYTE,
-      data
-    );
+    if (data.constructor === HTMLVideoElement) {
+      this.gl.texImage2D(
+        target,
+        0,
+        this.gl.RGBA,
+        this.gl.RGBA,
+        this.gl.UNSIGNED_BYTE,
+        data
+      );
+    } else {
+      this.gl.texImage2D(
+        target,
+        0,
+        this.gl.RGBA,
+        data.length / 4,
+        data.length / 4,
+        0,
+        this.gl.RGBA,
+        this.gl.UNSIGNED_BYTE,
+        data
+      );
+    }
 
     if (!this.paramsSet) {
       this.gl.texParameteri(
