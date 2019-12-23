@@ -1,15 +1,16 @@
 {
-  "name": "webgl-project-template",
+  "name": "example",
   "version": "1.0.0",
-  "description": "A project template for basic WebGL applications.",
+  "description": "",
   "main": "index.html",
   "scripts": {
-    "start": "live-server",
+    "build": "parcel build index.html -d ./build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
+  "private": true,
   "devDependencies": {
-    "live-server": "^1.2.1"
+    "parcel-bundler": "^1.12.4"
   }
 }
