@@ -1,4 +1,5 @@
-import AppContext from "/js/context.js";
+import AppContext from "../js/context.js";
+import videos from "./videos/";
 
 const glsl = x => x;
 
@@ -75,12 +76,7 @@ export const init = () => {
   app.fragmentShader(fSource);
   app.compile();
   const videoSources = {
-    sea: "video/sea.mp4",
-    winter: "video/winter.mp4",
-    cascade: "video/cascade.mp4",
-    river: "video/river.mp4",
-    rose: "video/rose.mp4",
-    waterfall: "video/waterfall.mp4"
+    ...videos
   };
   const video = createVideo(videoSources.sea);
   const rect = rectCoords(0, 0, 1920, 1080);
