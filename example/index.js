@@ -21,46 +21,45 @@ const rectCoords = (x, y, width, height) => {
 
 const createVideo = url => {
   const video = document.createElement("video");
-  // video.src = url;
   video.loop = true;
   video.muted = true;
   return video;
 };
 
 const vSource = glsl`
-    // an attribute will receive data from a buffer
-    attribute vec2 a_position;
-    uniform vec2 u_resolution;
-    attribute vec2 a_texCoord;
-    varying vec2 v_texCoord;
- 
-    void main() {
-      vec2 zeroToOne = a_position / u_resolution;
-      vec2 zeroToTwo = zeroToOne * 2.0;
-      vec2 clipSpace = zeroToTwo - 1.0;
-      gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-      v_texCoord = a_texCoord;
-    }
-  `;
-const fSource = glsl`
-    precision mediump float;
-    uniform sampler2D u_texture;
-    varying vec2 v_texCoord;
-    uniform vec4 u_threshold;
-    uniform float u_time;
+  // an attribute will receive data from a buffer
+  attribute vec2 a_position;
+  uniform vec2 u_resolution;
+  attribute vec2 a_texCoord;
+  varying vec2 v_texCoord;
 
-    void main() {
-      vec4 color = texture2D(u_texture, v_texCoord);
-      vec3 diff = u_threshold.rgb - color.rgb;
-      if (diff.r > 0.0 || diff.g > 0.0 || diff.b > 0.0) {
-        // vec3 c = color.rgb + (color.rgb * diff);
-        vec3 c = vec3(1.0, 1.0, 1.0) - color.rgb;
-        gl_FragColor = vec4(c.r, c.g, c.b, color.a);
-      } else {
-        gl_FragColor = color;
-      }
+  void main() {
+    vec2 zeroToOne = a_position / u_resolution;
+    vec2 zeroToTwo = zeroToOne * 2.0;
+    vec2 clipSpace = zeroToTwo - 1.0;
+    gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+    v_texCoord = a_texCoord;
+  }
+`;
+
+const fSource = glsl`
+  precision mediump float;
+  uniform sampler2D u_texture;
+  varying vec2 v_texCoord;
+  uniform vec4 u_threshold;
+  uniform float u_time;
+
+  void main() {
+    vec4 color = texture2D(u_texture, v_texCoord);
+    vec3 diff = u_threshold.rgb - color.rgb;
+    if (diff.r > 0.0 || diff.g > 0.0 || diff.b > 0.0) {
+      vec3 c = vec3(1.0, 1.0, 1.0) - color.rgb;
+      gl_FragColor = vec4(c.r, c.g, c.b, color.a);
+    } else {
+      gl_FragColor = color;
     }
-  `;
+  }
+`;
 
 export const init = () => {
   let thresholds = {
